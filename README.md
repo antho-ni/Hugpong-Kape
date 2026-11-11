@@ -46,6 +46,27 @@ The SQLite database and uploaded student IDs are created at runtime under `data/
 npm run build
 ```
 
+## Deployment
+
+The React frontend is deployed to Vercel. The PHP API must be deployed separately
+to a PHP host with PHP 8.2+, PDO SQLite, writable storage, and HTTPS. SQLite and
+uploaded student IDs are persistent files, so do not deploy the API as an
+ephemeral serverless function.
+
+1. Deploy the project to Vercel with `npm run build` as the build command and
+   `dist` as the output directory.
+2. Set the Vercel environment variable `VITE_API_URL` to the public API URL
+   including `/api`, for example `https://api.example.com/api`.
+3. On the PHP host, set `HK_ALLOWED_ORIGIN` to the exact Vercel URL, for example
+   `https://hugpong-kape.vercel.app`.
+4. Deploy the `api/` and `data/` directories to the PHP host. Keep `data/`
+   writable by PHP and protect the SQLite database and uploaded files from
+   direct public access.
+5. Redeploy the Vercel project after setting `VITE_API_URL`.
+
+The Vercel frontend and PHP API must use HTTPS so cross-origin login sessions
+and school-ID uploads work correctly.
+
 ## Security notes
 
 - Do not commit `.env` files, databases, uploaded IDs, or credentials.

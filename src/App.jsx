@@ -16,6 +16,7 @@ import Faq from './components/Faq'
 import Join from './components/Join'
 import AuthModal from './components/AuthModal'
 import StaffDashboard from './components/StaffDashboard'
+import { apiUrl } from './lib/api'
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
 ScrollTrigger.config({ ignoreMobileResize: true })
@@ -28,7 +29,7 @@ export default function App() {
   const done = useCallback(() => setSplash(false), [])
 
   useEffect(() => {
-    fetch('/api/me.php', { credentials: 'include' })
+    fetch(apiUrl('/me.php'), { credentials: 'include' })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => setUser(data?.user ?? null))
       .catch(() => setUser(null))
@@ -46,8 +47,8 @@ export default function App() {
   useEffect(() => { if (!splash) requestAnimationFrame(() => ScrollTrigger.refresh()) }, [splash])
 
   const logout = () => {
-    fetch('/api/csrf.php', { credentials: 'include' }).then((response) => response.json()).then(({ token }) =>
-      fetch('/api/logout.php', { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': token } })
+    fetch(apiUrl('/csrf.php'), { credentials: 'include' }).then((response) => response.json()).then(({ token }) =>
+      fetch(apiUrl('/logout.php'), { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': token } })
     ).finally(() => setUser(null))
   }
 

@@ -1,10 +1,24 @@
 <?php
 declare(strict_types=1);
 
+$allowedOrigin = trim((string)(getenv('HK_ALLOWED_ORIGIN') ?: ''));
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$crossOriginRequest = $allowedOrigin !== '' && $requestOrigin === $allowedOrigin;
+if ($crossOriginRequest) {
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+}
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 session_set_cookie_params([
     'httponly' => true,
-    'samesite' => 'Lax',
-    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'samesite' => $crossOriginRequest ? 'None' : 'Lax',
+    'secure' => $crossOriginRequest || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     'path' => '/',
 ]);
 session_start();

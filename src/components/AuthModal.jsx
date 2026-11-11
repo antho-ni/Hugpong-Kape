@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { apiUrl } from '../lib/api'
 
 export default function AuthModal({ open, onClose, onAuthenticated }) {
   const [mode, setMode] = useState('login')
@@ -12,14 +13,14 @@ export default function AuthModal({ open, onClose, onAuthenticated }) {
     setError('')
     setBusy(true)
     try {
-      const csrfResponse = await fetch('/api/csrf.php', { credentials: 'include' })
+      const csrfResponse = await fetch(apiUrl('/csrf.php'), { credentials: 'include' })
       const { token } = await csrfResponse.json()
       const requestBody = mode === 'register' ? (() => {
         const body = new FormData()
         Object.entries(form).forEach(([key, value]) => { if (value !== null) body.append(key, value) })
         return body
       })() : JSON.stringify(form)
-      const response = await fetch(`/api/${mode}.php`, {
+      const response = await fetch(apiUrl(`/${mode}.php`), {
         method: 'POST',
         headers: { ...(mode === 'login' ? { 'Content-Type': 'application/json' } : {}), 'X-CSRF-Token': token },
         credentials: 'include',

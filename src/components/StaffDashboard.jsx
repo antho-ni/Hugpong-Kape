@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { apiUrl } from '../lib/api'
 
-const getCsrf = () => fetch('/api/csrf.php', { credentials: 'include' }).then((response) => response.json())
+const getCsrf = () => fetch(apiUrl('/csrf.php'), { credentials: 'include' }).then((response) => response.json())
 const today = () => new Date().toISOString().slice(0, 10)
 
 export default function StaffDashboard({ user = {}, onLogout }) {
@@ -30,12 +31,12 @@ export default function StaffDashboard({ user = {}, onLogout }) {
   const [confirmCheckout, setConfirmCheckout] = useState(false)
 
   const load = async (query = search) => {
-    const response = await fetch(`/api/staff.php?q=${encodeURIComponent(query)}`, { credentials: 'include' })
+    const response = await fetch(apiUrl(`/staff.php?q=${encodeURIComponent(query)}`), { credentials: 'include' })
     const data = await response.json()
     if (!response.ok) throw new Error(data.error || 'Unable to load staff data.')
     setStudents(data.students)
     setMembers(data.members)
-    const pos = await fetch(`/api/pos.php?report_date=${encodeURIComponent(reportDate)}`, { credentials: 'include' }).then((response) => response.json())
+    const pos = await fetch(apiUrl(`/pos.php?report_date=${encodeURIComponent(reportDate)}`), { credentials: 'include' }).then((response) => response.json())
     if (pos.products) { setProducts(pos.products); setSales(pos.sales); setShift(pos.shift); setSummary(pos.summary); setReport(pos.report) }
   }
 
@@ -46,7 +47,7 @@ export default function StaffDashboard({ user = {}, onLogout }) {
     setError('')
     try {
       const { token } = await getCsrf()
-      const response = await fetch('/api/staff.php', {
+      const response = await fetch(apiUrl('/staff.php'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
@@ -69,7 +70,7 @@ export default function StaffDashboard({ user = {}, onLogout }) {
     setError('')
     try {
       const { token } = await getCsrf()
-      const response = await fetch('/api/pos.php', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token }, body: JSON.stringify(payload) })
+      const response = await fetch(apiUrl('/pos.php'), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token }, body: JSON.stringify(payload) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Unable to complete POS action.')
       await load()
@@ -180,7 +181,7 @@ export default function StaffDashboard({ user = {}, onLogout }) {
         {selected && <motion.div className="fixed inset-0 z-[90] grid place-items-center bg-espresso/50 p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-paper p-6 shadow-2xl" initial={{ y: 20 }} animate={{ y: 0 }}>
             <div className="flex justify-between"><div><h2 className="font-serif text-3xl font-bold">{selected.name}</h2><p className="mt-1 text-espresso/60">{selected.student_id} · {selected.email}</p></div><button onClick={() => setSelected(null)} aria-label="Close" className="text-2xl">×</button></div>
-            {selected.verification ? <><img src={`/api/id-document.php?id=${encodeURIComponent(selected.id)}`} alt={`School ID for ${selected.name}`} className="mt-6 max-h-[50vh] w-full rounded-2xl border border-espresso/10 object-contain" /><div className="mt-6 flex justify-end gap-3"><button disabled={busy} onClick={() => action({ student_id: selected.id, decision: 'reject' })} className="rounded-full border border-red-300 px-5 py-3 font-semibold text-red-700">Reject</button><button disabled={busy} onClick={() => action({ student_id: selected.id, decision: 'approve' })} className="rounded-full bg-calamansi px-5 py-3 font-semibold text-espresso">Approve student</button></div></> : <><p className="mt-6 text-espresso/60">Circle the next stamp after confirming a completed purchase.</p><div className="mt-6 grid grid-cols-9 gap-2">{Array.from({ length: 9 }, (_, index) => <span key={index} className={`grid aspect-square place-items-center rounded-full border-2 text-sm font-bold ${index < (selected.stamps || 0) ? 'border-muscovado bg-caramel text-cream' : 'border-espresso/15 text-espresso/30'}`}>{index < (selected.stamps || 0) ? '✓' : index + 1}</span>)}</div><div className="mt-6 flex justify-end gap-3">{(selected.stamps || 0) >= 9 && !selected.reward_redeemed ? <button disabled={busy} onClick={() => action({ action: 'redeem', user_id: selected.id })} className="rounded-full bg-calamansi px-5 py-3 font-semibold text-espresso">Redeem free drink</button> : <button disabled={busy || (selected.stamps || 0) >= 9} onClick={() => action({ action: 'stamp', user_id: selected.id })} className="rounded-full bg-muscovado px-5 py-3 font-semibold text-white">{busy ? 'Saving…' : 'Add purchase stamp'}</button>}</div></>}
+            {selected.verification ? <><img src={apiUrl(`/id-document.php?id=${encodeURIComponent(selected.id)}`)} alt={`School ID for ${selected.name}`} className="mt-6 max-h-[50vh] w-full rounded-2xl border border-espresso/10 object-contain" /><div className="mt-6 flex justify-end gap-3"><button disabled={busy} onClick={() => action({ student_id: selected.id, decision: 'reject' })} className="rounded-full border border-red-300 px-5 py-3 font-semibold text-red-700">Reject</button><button disabled={busy} onClick={() => action({ student_id: selected.id, decision: 'approve' })} className="rounded-full bg-calamansi px-5 py-3 font-semibold text-espresso">Approve student</button></div></> : <><p className="mt-6 text-espresso/60">Circle the next stamp after confirming a completed purchase.</p><div className="mt-6 grid grid-cols-9 gap-2">{Array.from({ length: 9 }, (_, index) => <span key={index} className={`grid aspect-square place-items-center rounded-full border-2 text-sm font-bold ${index < (selected.stamps || 0) ? 'border-muscovado bg-caramel text-cream' : 'border-espresso/15 text-espresso/30'}`}>{index < (selected.stamps || 0) ? '✓' : index + 1}</span>)}</div><div className="mt-6 flex justify-end gap-3">{(selected.stamps || 0) >= 9 && !selected.reward_redeemed ? <button disabled={busy} onClick={() => action({ action: 'redeem', user_id: selected.id })} className="rounded-full bg-calamansi px-5 py-3 font-semibold text-espresso">Redeem free drink</button> : <button disabled={busy || (selected.stamps || 0) >= 9} onClick={() => action({ action: 'stamp', user_id: selected.id })} className="rounded-full bg-muscovado px-5 py-3 font-semibold text-white">{busy ? 'Saving…' : 'Add purchase stamp'}</button>}</div></>}
           </motion.div>
         </motion.div>}
       </AnimatePresence>
